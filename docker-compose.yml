@@ -1,0 +1,42 @@
+version: '3'
+services:
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./app_src:/var/www/
+      - ./docker/nginx/container-config/etc/nginx/conf.d/site.conf:/etc/nginx/conf.d/site.conf
+    depends_on:
+      - php
+    links:
+      - db
+  php:
+    container_name: php
+    build:
+      context: docker/php
+      args:
+        - ENABLE_NEW_RELIC=${ENABLE_NEW_RELIC:-false}
+        - NEW_RELIC_APP_KEY=${NEW_RELIC_APP_KEY:-false}
+        - NEW_RELIC_APP_NAME=${NEW_RELIC_APP_NAME:-false}
+        - ENABLE_XDEBUG=${ENABLE_XDEBUG:-false}
+    volumes:
+      - ./app_src:/var/www
+    links:
+      - db
+  db:
+    container_name: db
+    image: mariadb:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "tinyapi"
+      MYSQL_USER: "tinyapi"
+      MYSQL_PASSWORD: "tinyapi"
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/mysql/dbdata:/var/lib/mysql
+volumes:
+  dbdata:
+    driver: local
